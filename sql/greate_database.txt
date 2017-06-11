@@ -1,0 +1,19 @@
+В терміналі зайдіть під користувачем postgres
+sudo su - postgres
+
+Створіть базу даних та користувача
+createdb guest_book_database
+createuser -P guest_book
+
+Запустіть оболонку postgresql
+psql
+
+В оболонці postgresql призначте права користувачу
+grant create on database guest_book_database to guest_book;
+grant temporary on database guest_book_database to guest_book;
+
+Вийдіть з оболонки та користувача postgresql
+Перейдіть в каталог, де знаходиться проект.
+
+Створіть таблиці бази даних:
+cat ./sql/schema.sql | psql -h localhost -U guest_book -d guest_book_database
