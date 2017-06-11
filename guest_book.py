@@ -10,11 +10,10 @@ import datetime
 from settings import DB_CONNECTION_INFO
 
 
-TUPLE_OF_KEYS = ('id', 'name', 'created_at', 'message')
 SELECT_ALL_MESSAGES = """SELECT * FROM message"""
 SELECT_YOUR_MESSAGE = """SELECT * FROM message WHERE m_created_at = %s"""
 SELECT_ONE_MESSAGE = """SELECT * FROM message WHERE m_id = %s"""
-INSERT_MESSAGE = """INSERT INTO message (m_name, m_created_at, m_message) VALUES (%s, %s, %s)"""
+INSERT_MESSAGE = """INSERT INTO message (m_name, m_message, m_created_at) VALUES (%s, %s, %s)"""
 XML_SUFFIX = 'xml'
 JSON_SUFFIX = 'json'
 GUESTBOOK = 'guestbook'
@@ -26,8 +25,11 @@ MESSAGE = 'message'
 FORMAT = 'format'
 CREATED_AT = 'created_at'
 GUESTBOOK_MESSAGE = 'guestbook-message'
+FIRST_VALUE_IN_ITERABLE = 'first_value_in_iterable'
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 PATH_TO_MESSAGE_FROM_POST = '/guestbook/guestbook-message'
+TUPLE_OF_KEYS = (ID, NAME, CREATED_AT, MESSAGE)
+FIELD_NAME_IDX_MAP = {FIRST_VALUE_IN_ITERABLE: 0, ID: 0, NAME: 1, CREATED_AT: 2, MESSAGE: 3}
 
 
 def get_db_connection():
@@ -61,25 +63,25 @@ def data_to_xml(data, all_book):
     size = str(len(data))
     root = etree.Element(GUESTBOOK, attrib={SIZE: size}) if all_book else etree.Element(GUESTBOOK)
     for i in range(len(data)):
-        child = etree.SubElement(root, GUESTBOOK_MESSAGE, attrib={ID: str(data[i][0]), NAME: data[i][1],
-                                                                  CREATED_AT: data[i][2]})
-        child.text = data[i][3]
+        child = etree.SubElement(root, GUESTBOOK_MESSAGE, attrib={ID: str(data[i][FIELD_NAME_IDX_MAP[ID]]),
+                                                                  NAME: data[i][FIELD_NAME_IDX_MAP[NAME]],
+                                                                  CREATED_AT: data[i][FIELD_NAME_IDX_MAP[CREATED_AT]]})
+        child.text = data[i][FIELD_NAME_IDX_MAP[MESSAGE]]
     result = etree.tostring(root, encoding='utf-8')
     return result
 
 
 def data_to_json(data, all_book):
     result = {}
-    limit = len(data)
-    result[SIZE] = limit
-    if limit > 0:
+    if not all_book:
+        result = {TUPLE_OF_KEYS[j]: data[FIELD_NAME_IDX_MAP[FIRST_VALUE_IN_ITERABLE]][j]
+                  for j in range(len(data[FIELD_NAME_IDX_MAP[FIRST_VALUE_IN_ITERABLE]]))}
+    if all_book:
+        limit = len(data)
+        result[SIZE] = limit
         result[GUESTBOOK] = []
         for i in range(limit):
-            result[GUESTBOOK].append({})
-            for j in range(len(data[i])):
-                result[GUESTBOOK][i][TUPLE_OF_KEYS[j]] = data[i][j]
-    if not all_book:
-        result = result[GUESTBOOK][0]
+            result[GUESTBOOK].append({TUPLE_OF_KEYS[j]: data[i][j] for j in range(len(data[i]))})
     return result
 
 
@@ -95,15 +97,15 @@ def get_data_from_post(body, format_):
         data = tornado.escape.xhtml_unescape(body)
         tree = etree.XML(data)
         notes = tree.xpath(PATH_TO_MESSAGE_FROM_POST)
-        name = notes[0].get(NAME)
-        message = notes[0].text
-    insert_data = (name, created_at, message)
+        name = notes[FIELD_NAME_IDX_MAP[FIRST_VALUE_IN_ITERABLE]].get(NAME)
+        message = notes[FIELD_NAME_IDX_MAP[FIRST_VALUE_IN_ITERABLE]].text
+    insert_data = (name, message, created_at)
     return insert_data
 
 
 def making_insert_to_db(insert_data):
     get_data(INSERT_MESSAGE, insert_data, False)
-    return insert_data[1]
+    return insert_data[FIELD_NAME_IDX_MAP[CREATED_AT]]
 
 
 class MainHandler(tornado.web.RequestHandler):
