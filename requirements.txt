@@ -1,0 +1,7 @@
+backports-abc == 0.5
+lxml == 3.8.0
+pip == 9.0.1
+psycopg2 == 2.7.1
+setuptools == 36.0.1
+tornado == 4.5.1
+wheel == 0.29.0
