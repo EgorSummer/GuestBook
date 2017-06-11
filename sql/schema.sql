@@ -1,5 +1,5 @@
 
-CREATE TABLE massage
+CREATE TABLE message
 	(
 		m_id serial primary key,
 		m_name VARCHAR(128),
