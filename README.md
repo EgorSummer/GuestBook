@@ -1,2 +1,2 @@
 # GuestBook
-Simple guestbook realisation.
+Simple realisation of guestbook.
