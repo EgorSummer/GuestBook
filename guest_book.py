@@ -35,9 +35,10 @@ PATH_TO_MESSAGE_FROM_POST = '/guestbook/guestbook-message'
 NOT_FOUND = 'Not found.'
 NAME_OR_MESSAGE_IS_EMPTY = 'Name or message is empty.'
 INTERNAL_SERVER_ERROR = 'Internal server error.'
+NOT_ACCEPTABLE_FORMAT = 'Not acceptable format.'
 TUPLE_OF_KEYS = (ID, NAME, CREATED_AT, MESSAGE)
 FIELD_NAME_IDX_MAP = {ID: 0, NAME: 1, CREATED_AT: 2, MESSAGE: 3}
-
+ACCEPTABLE_FORMATS = ('json', 'xml')
 
 
 def get_db_connection(format_):
@@ -65,6 +66,10 @@ def mapping_depending_on_the_suffix(rows, format_, all_book=True):
     elif format_ == XML_SUFFIX:
         data = data_to_xml(rows, all_book)
     return data
+
+    # В двох наступних функціях all_book визначає структуру побудови даних:
+    # all_book = False будуються дані з одного повідомлення,
+    # all_book = True будуються дані із усіх повідомленнь з книги.
 
 
 def data_to_xml(data, all_book):
@@ -117,6 +122,7 @@ def making_insert_to_db(insert_data, format_):
 
 
 def error_message(status_code, message, format_):
+    # Будуються дані, для повернення під час обробки exceptions.
     result = None
     if format_ == JSON_SUFFIX:
         result = json.dumps({ERROR: message, STATUS_CODE: status_code})
@@ -134,9 +140,14 @@ class MyException(tornado.web.HTTPError):
 
 
 class MyBaseHandler(tornado.web.RequestHandler):
+    # Handler для обробки exceptions.
 
     def format_(self):
-        return self.get_argument(FORMAT)
+        # Виділяє суфікс з URL запиту, який визначає формат даних у відповіді: json або xml.
+        format_ = self.get_argument(FORMAT)
+        if format_ not in ACCEPTABLE_FORMATS:
+            raise MyException(reason=error_message(400, NOT_ACCEPTABLE_FORMAT, JSON_SUFFIX))
+        return format_
 
     def write_error(self, status_code, **kwargs):
         reason = self._reason
