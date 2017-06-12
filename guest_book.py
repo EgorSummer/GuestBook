@@ -1,5 +1,74 @@
 #!/usr/bin/env python
 
+# Даний модуль реалізує backend простої гостьової книги веб сайту.
+# GET запит з URL /guestbook/?=(json або xml), повертає дані усієї гостьової криги у вигляді:
+# для JSON
+# {
+#  "size": <integer>,
+#  "guestbook": [
+#     {
+#        "id": <integer>,
+#        "name": <string>,
+#        "message": <string>,
+#        "created_at": <string of date>,
+#      },
+#      {
+#        "id": <integer>,
+#        "name": <string>,
+#        "message": <string>,
+#         "created_at": <string of date>,
+#      },
+#      //  etc etc etc
+#   ]
+# }
+# для XML:
+# <guestbook size="integer of id">
+#  <guestbook-message id="1" name="Name" created-at="string of date">
+#     message
+#  </guestbook-message>
+#  <guestbook-message id="integer of id" name="Name" created-at="string of date2">
+#     message
+#  </guestbook-message>
+#  //  etc etc etc
+# </guestbook>
+#
+# GET запит /guestbook/<id:integer>?=(json або xml), повертає дані про одне повідомлення з id = id:integer у вигляді:
+# для JSON:
+# {
+#  "id": <integer>,
+#  "name": <string>,
+#  "message": <string>,
+#  "created_at": <string of date>,
+# }
+# для XML:
+# <guestbook>
+#  <guestbook-message id="id:integer" name="Name" created-at="string of date">
+#     message
+#  </guestbook-message>
+# <guestbook>
+#
+# POST запит /guestbook/?=(json або xml), отримує дані у вигляді:
+# для JSON:
+# {
+#   "name": <string>,
+#   "message": <string>
+# }
+# для XML:
+# <guestbook>
+#   <guestbook-message name="Name">
+#      message
+#   </guestbook-message>
+# <guestbook>
+# Створює новий запис для книги відгуків, зберігає його в БД, та повертає дане повідомлення у вигляді, в якому
+# повертаються дані при запиті одного повідомлення по id.
+# Exceptions handler обробляє виключення та повертає дані з HTTP статусом <status_code> та тілом:
+# для JSON:
+# { "error": "string of error", "status_code": status_code }
+# для XML:
+# <guestbook error="status_code">
+#   <guestbook-error>string of error</guestbook-error>
+# </guestbook>
+# Для непідтримуваних форматів (не JSON або XML) тіло виключення повертається в форматі JSON.
 
 import tornado.web
 from tornado.ioloop import IOLoop
